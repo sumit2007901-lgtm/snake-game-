@@ -1,0 +1,779 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Fight Arena 2.0</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080b18;color:white;
+ font-family:Arial,sans-serif;
+}
+header{
+ text-align:center;padding:20px;
+ background:linear-gradient(120deg,#10172f,#38204d,#10172f);
+ border-bottom:2px solid #ffb52c;
+}
+header h1{
+ margin:0;color:#ffc247;font-size:clamp(24px,4vw,42px);
+ text-shadow:0 0 20px #ff8a00;
+}
+header p{color:#b8c7e6}
+main{max-width:1150px;margin:auto;padding:18px}
+.card{
+ background:#141d33;border:1px solid #ffffff1c;
+ border-radius:15px;padding:17px;margin-bottom:17px;
+ box-shadow:0 10px 35px #0005;
+}
+h2{color:#ffcb54;margin-top:0}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.control{flex:1;min-width:150px}
+label{display:block;color:#aebbd5;margin-bottom:7px}
+select,input,button{
+ padding:11px;border-radius:8px;border:1px solid #405071;
+ background:#0b1428;color:white;
+}
+select{width:100%}
+button{
+ background:linear-gradient(135deg,#ffc044,#ff7c21);
+ color:#201000;font-weight:bold;border:0;
+ cursor:pointer;transition:.2s;
+}
+button:hover{transform:translateY(-2px);filter:brightness(1.15)}
+button:disabled{opacity:.5;cursor:not-allowed}
+#arena{
+ position:relative;width:100%;overflow:hidden;
+ border:2px solid #ffc247;border-radius:13px;
+ box-shadow:0 0 30px #ff9c2840;
+ background:#10172d;
+}
+canvas{display:block;width:100%;height:auto}
+.hud{
+ display:grid;grid-template-columns:1fr 1fr;gap:15px;
+ margin-bottom:15px;
+}
+.playerhud{background:#0b1326;padding:12px;border-radius:10px}
+.hudtop{display:flex;justify-content:space-between;gap:8px}
+.health,.energy{
+ height:14px;background:#27334a;border-radius:20px;
+ overflow:hidden;margin-top:8px;
+}
+.health div{height:100%;background:linear-gradient(90deg,#ff354e,#ffb52c);width:100%;transition:.2s}
+.energy div{height:100%;background:linear-gradient(90deg,#00cfff,#8c5bff);width:0%;transition:.2s}
+#announcement{
+ text-align:center;font-size:22px;font-weight:bold;
+ color:#ffcf59;min-height:30px;margin:12px;
+}
+.stats{
+ display:flex;justify-content:space-around;gap:10px;
+ flex-wrap:wrap;color:#dce8ff;
+}
+.stats b{color:#ffc247}
+.key{
+ background:#0a1429;border:1px solid #33435e;
+ padding:12px;border-radius:9px;flex:1;min-width:210px;
+ line-height:1.9;
+}
+kbd{
+ background:#35435c;padding:3px 7px;border-radius:5px;
+ color:#fff;
+}
+#mobileControls{
+ display:none;grid-template-columns:repeat(4,1fr);gap:8px;
+ margin-top:12px;
+}
+#mobileControls button{padding:15px 4px}
+footer{text-align:center;padding:25px;color:#8492ad}
+@media(max-width:650px){
+ .hud{grid-template-columns:1fr}
+ #mobileControls{display:grid}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>⚔ INDIA FIGHT ARENA 2.0</h1>
+<p>THE ULTIMATE CARTOON FIGHTING CHAMPIONSHIP</p>
+</header>
+
+<main>
+
+<section class="card">
+<h2>🎮 Character Selection</h2>
+<div class="row">
+ <div class="control">
+  <label>Player 1 Fighter</label>
+  <select id="char1">
+   <option value="gandhi">Gandhi Fighter</option>
+   <option value="modi">Modi Fighter</option>
+   <option value="warrior">Indian Warrior</option>
+   <option value="boss">Arena Boss</option>
+  </select>
+ </div>
+ <div class="control">
+  <label>Player 2 Fighter</label>
+  <select id="char2">
+   <option value="modi">Modi Fighter</option>
+   <option value="gandhi">Gandhi Fighter</option>
+   <option value="warrior">Indian Warrior</option>
+   <option value="boss">Arena Boss</option>
+  </select>
+ </div>
+ <div class="control">
+  <label>Game Mode</label>
+  <select id="mode">
+   <option value="ai">Player vs Computer</option>
+   <option value="two">Player vs Player</option>
+  </select>
+ </div>
+ <div class="control">
+  <label>Arena</label>
+  <select id="stage">
+   <option value="palace">Royal Palace</option>
+   <option value="city">Neon City</option>
+   <option value="desert">Desert Arena</option>
+  </select>
+ </div>
+ <div class="control">
+  <label>Difficulty</label>
+  <select id="difficulty">
+   <option value="easy">Easy</option>
+   <option value="normal" selected>Normal</option>
+   <option value="hard">Hard</option>
+  </select>
+ </div>
+</div>
+<br>
+<div class="row">
+ <button onclick="startGame()">⚔ START MATCH</button>
+ <button onclick="pauseGame()">⏸ PAUSE</button>
+ <button onclick="resetGame()">↻ RESET</button>
+ <button onclick="soundOn()">🔊 SOUND ON</button>
+ <button onclick="soundOff()">🔇 SOUND OFF</button>
+</div>
+</section>
+
+<section class="card">
+<h2>🥊 Championship Arena</h2>
+<div class="hud">
+ <div class="playerhud">
+  <div class="hudtop"><b id="name1">GANDHI</b><b id="hp1">100 HP</b></div>
+  <div class="health"><div id="health1"></div></div>
+  <small>ENERGY</small>
+  <div class="energy"><div id="energy1"></div></div>
+ </div>
+ <div class="playerhud">
+  <div class="hudtop"><b id="name2">MODI</b><b id="hp2">100 HP</b></div>
+  <div class="health"><div id="health2"></div></div>
+  <small>ENERGY</small>
+  <div class="energy"><div id="energy2"></div></div>
+ </div>
+</div>
+
+<div class="stats">
+ <span>⏱ TIME: <b id="timer">99</b></span>
+ <span>🔥 COMBO: <b id="combo">0</b></span>
+ <span>🏆 ROUND: <b id="round">1</b></span>
+</div>
+<br>
+<div id="arena">
+ <canvas id="game" width="960" height="540"></canvas>
+</div>
+<div id="announcement">SELECT YOUR FIGHTERS AND START!</div>
+
+<div id="mobileControls">
+ <button onclick="mobile('left')">◀ LEFT</button>
+ <button onclick="mobile('right')">RIGHT ▶</button>
+ <button onclick="mobile('jump')">⬆ JUMP</button>
+ <button onclick="mobile('block')">🛡 BLOCK</button>
+ <button onclick="mobile('punch')">👊 PUNCH</button>
+ <button onclick="mobile('kick')">🦶 KICK</button>
+ <button onclick="mobile('special')">⚡ POWER</button>
+ <button onclick="mobile('stop')">STOP</button>
+</div>
+</section>
+
+<section class="card">
+<h2>⌨ Keyboard Controls</h2>
+<div class="row">
+ <div class="key">
+  <b>PLAYER 1</b><br>
+  <kbd>A</kbd> Move Left<br>
+  <kbd>D</kbd> Move Right<br>
+  <kbd>W</kbd> Jump<br>
+  <kbd>S</kbd> Block<br>
+  <kbd>F</kbd> Punch<br>
+  <kbd>G</kbd> Kick<br>
+  <kbd>H</kbd> Super Attack
+ </div>
+ <div class="key">
+  <b>PLAYER 2</b><br>
+  <kbd>←</kbd> Move Left<br>
+  <kbd>→</kbd> Move Right<br>
+  <kbd>↑</kbd> Jump<br>
+  <kbd>↓</kbd> Block<br>
+  <kbd>K</kbd> Punch<br>
+  <kbd>L</kbd> Kick<br>
+  <kbd>;</kbd> Super Attack
+ </div>
+</div>
+</section>
+
+<section class="card">
+<h2>🏆 Match Results</h2>
+<div class="row">
+ <div class="key">Player 1 Wins: <b id="wins1">0</b></div>
+ <div class="key">Player 2 Wins: <b id="wins2">0</b></div>
+ <div class="key">Total Matches: <b id="matches">0</b></div>
+</div>
+</section>
+
+</main>
+<footer>INDIA FIGHT ARENA 2.0 | Original arcade-style game</footer>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const $=id=>document.getElementById(id);
+
+const characters={
+ gandhi:{name:"GANDHI",shirt:"#eee9da",skin:"#b77b57",
+ hair:"#e9e2d2",beard:"#e9e2d2",type:0},
+ modi:{name:"MODI",shirt:"#ee8a32",skin:"#bb805c",
+ hair:"#eeeeee",beard:"#eeeeee",type:1},
+ warrior:{name:"WARRIOR",shirt:"#168e68",skin:"#a66a49",
+ hair:"#211c1a",beard:"#211c1a",type:2},
+ boss:{name:"ARENA BOSS",shirt:"#8643ce",skin:"#b77c55",
+ hair:"#171322",beard:"#171322",type:3}
+};
+
+let p1,p2;
+let running=false,paused=false,finished=false;
+let last=0,remaining=99,clock=0;
+let frame=0,shake=0;
+let particles=[],keys={},sound=true;
+let wins1=0,wins2=0,matches=0;
+let combo=0,comboTime=0;
+let raf=null;
+
+function fighter(type,x,side){
+ return {
+  type,x,y:400,vx:0,vy:0,hp:100,energy:0,
+  side,ground:400,attack:0,attackType:"",
+  cooldown:0,block:false,flash:0,stun:0,
+  color:characters[type].shirt,walk:0,
+  facing:side===1?1:-1,aiTimer:0
+ };
+}
+
+function resetGame(){
+ running=false;paused=false;finished=false;
+ cancelAnimationFrame(raf);
+ p1=fighter("gandhi",280,1);
+ p2=fighter("modi",680,2);
+ particles=[];
+ combo=0;remaining=99;
+ frame=0;shake=0;
+ updateHUD();draw();
+ $("announcement").textContent="READY FOR THE FIGHT!";
+ $("timer").textContent=99;
+}
+
+function startGame(){
+ resetGame();
+ p1=fighter($("char1").value,280,1);
+ p2=fighter($("char2").value,680,2);
+ running=true;paused=false;finished=false;
+ remaining=99;last=performance.now();
+ $("announcement").textContent="🔥 FIGHT!";
+ raf=requestAnimationFrame(loop);
+}
+
+function pauseGame(){
+ if(!running)return;
+ paused=!paused;
+ $("announcement").textContent=paused?"⏸ GAME PAUSED":"🔥 FIGHT!";
+ if(!paused){
+  last=performance.now();
+  raf=requestAnimationFrame(loop);
+ }
+}
+
+function resetStats(){
+ wins1=0;wins2=0;matches=0;stats();
+}
+
+function stats(){
+ $("wins1").textContent=wins1;
+ $("wins2").textContent=wins2;
+ $("matches").textContent=matches;
+}
+
+function soundEffect(freq=400){
+ if(!sound)return;
+ try{
+  const ac=new AudioContext();
+  const o=ac.createOscillator();
+  const g=ac.createGain();
+  o.frequency.value=freq;
+  g.gain.value=.045;
+  o.connect(g);g.connect(ac.destination);
+  o.start();o.stop(ac.currentTime+.1);
+ }catch(e){}
+}
+
+function particle(x,y,color,count=12){
+ for(let i=0;i<count;i++){
+  let a=Math.random()*Math.PI*2;
+  let speed=2+Math.random()*7;
+  particles.push({
+   x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,
+   life:25+Math.random()*20,color,
+   size:2+Math.random()*5
+  });
+ }
+}
+
+function attack(f,target,type){
+ if(!running||paused||finished||f.cooldown>0||f.stun>0)return;
+ if(type==="special"&&f.energy<100)return;
+
+ if(type==="special")f.energy=0;
+ f.attack=type==="special"?28:type==="kick"?17:13;
+ f.attackType=type;
+ f.cooldown=type==="special"?65:30;
+
+ let range=type==="special"?190:type==="kick"?125:105;
+ let distance=Math.abs(f.x-target.x);
+ if(distance<range){
+  let damage=type==="special"?27:type==="kick"?15:9;
+  if(target.block)damage=Math.ceil(damage*.2);
+  if(type==="special"&&!target.block){
+   target.stun=22;
+   shake=15;
+   particle(target.x,target.y-130,"#ffe15a",35);
+  }else{
+   target.stun=target.block?3:9;
+   particle(target.x,target.y-100,
+    type==="kick"?"#ffac35":"#fff2b0",16);
+   shake=6;
+  }
+  target.hp=Math.max(0,target.hp-damage);
+  f.energy=Math.min(100,f.energy+damage*2);
+  if(f.side===1){
+   combo++;comboTime=110;
+  }
+  soundEffect(type==="special"?100:type==="kick"?220:450);
+  if(target.hp<=0)finish(f);
+ }
+}
+
+function finish(winner){
+ if(finished)return;
+ finished=true;running=false;matches++;
+ if(winner===p1)wins1++;else wins2++;
+ $("announcement").textContent=
+ "🏆 "+characters[winner.type].name+" WINS!";
+ particle(480,220,"#ffd34f",65);
+ stats();
+ soundEffect(850);
+}
+
+function updateHUD(){
+ for(const [f,n] of [[p1,1],[p2,2]]){
+  $("name"+n).textContent=characters[f.type].name;
+  $("hp"+n).textContent=f.hp+" HP";
+  $("health"+n).style.width=f.hp+"%";
+  $("energy"+n).style.width=f.energy+"%";
+ }
+ $("combo").textContent=combo;
+}
+
+function control(f,target,action){
+ if(action==="left")f.vx=-5;
+ if(action==="right")f.vx=5;
+ if(action==="jump"&&f.y>=f.ground)f.vy=-14;
+ if(action==="block")f.block=true;
+ if(action==="punch")attack(f,target,"punch");
+ if(action==="kick")attack(f,target,"kick");
+ if(action==="special")attack(f,target,"special");
+}
+
+function mobile(action){
+ if(!running)return;
+ control(p1,p2,action);
+}
+
+function ai(){
+ if($("mode").value!=="ai")return;
+ let d=p1.x-p2.x;
+ p2.block=false;
+ if(Math.abs(d)>125){
+  p2.vx=Math.sign(d)*3.2;
+ }else{
+  p2.vx*=.5;
+  if(Math.random()<.065)
+   attack(p2,p1,Math.random()<.55?"punch":"kick");
+  if(p2.energy>=100&&Math.random()<.025)
+   attack(p2,p1,"special");
+  if(Math.random()<.035)p2.block=true;
+  if(Math.random()<.012&&p2.y>=p2.ground)p2.vy=-13;
+ }
+}
+
+function updateFighter(f,dt){
+ if(f.stun>0)f.stun-=dt;
+ else{
+  f.x+=f.vx*dt;
+ }
+ f.x=Math.max(55,Math.min(905,f.x));
+ f.vx*=Math.pow(.83,dt);
+ f.y+=f.vy*dt;
+ f.vy+=.65*dt;
+ if(f.y>=f.ground){f.y=f.ground;f.vy=0}
+ f.cooldown=Math.max(0,f.cooldown-dt);
+ f.attack=Math.max(0,f.attack-dt);
+ f.flash=Math.max(0,f.flash-dt);
+ if(Math.abs(f.vx)>.5)f.walk+=dt*.2;
+ f.facing=f.x<p2.x?1:-1;
+}
+
+function loop(now){
+ if(!running||paused)return;
+ let dt=Math.min(2,(now-last)/16.67);
+ last=now;frame++;
+ if(frame%60===0){
+  remaining--;
+  $("timer").textContent=remaining;
+  if(remaining<=0){
+   running=false;finished=true;
+   $("announcement").textContent=
+    p1.hp===p2.hp?"🤝 DRAW!":
+    characters[p1.hp>p2.hp?p1.type:p2.type].name+" WINS ON POINTS!";
+   matches++;
+   if(p1.hp>p2.hp)wins1++;
+   else if(p2.hp>p1.hp)wins2++;
+   stats();return;
+  }
+ }
+ ai();
+ updateFighter(p1,dt);
+ updateFighter(p2,dt);
+ particles.forEach(p=>{
+  p.x+=p.vx*dt;p.y+=p.vy*dt;
+  p.vy+=.2*dt;p.life-=dt;
+ });
+ particles=particles.filter(p=>p.life>0);
+ if(comboTime>0)comboTime-=dt;
+ else combo=0;
+ updateHUD();
+ draw();
+ raf=requestAnimationFrame(loop);
+}
+
+// Background graphics
+function background(){
+ let stage=$("stage").value;
+ let gradient=ctx.createLinearGradient(0,0,0,540);
+ if(stage==="city"){
+  gradient.addColorStop(0,"#111b43");
+  gradient.addColorStop(1,"#35204f");
+ }else if(stage==="desert"){
+  gradient.addColorStop(0,"#572e48");
+  gradient.addColorStop(1,"#e58b42");
+ }else{
+  gradient.addColorStop(0,"#101c45");
+  gradient.addColorStop(1,"#59375a");
+ }
+ ctx.fillStyle=gradient;ctx.fillRect(0,0,960,540);
+
+ // stars
+ for(let i=0;i<55;i++){
+  let x=(i*173)%960;
+  let y=(i*71)%250;
+  ctx.fillStyle="#ffffff55";
+  ctx.fillRect(x,y,2,2);
+ }
+
+ if(stage==="palace"){
+  ctx.fillStyle="#26355c";
+  ctx.fillRect(100,155,760,245);
+  for(let x=125;x<860;x+=145){
+   ctx.fillStyle="#a88972";
+   ctx.fillRect(x,130,24,270);
+   ctx.beginPath();
+   ctx.arc(x+12,130,12,Math.PI,0);
+   ctx.fill();
+  }
+  ctx.fillStyle="#e4ad5b";
+  ctx.fillRect(0,400,960,140);
+  ctx.fillStyle="#ffdc8c";
+  ctx.font="bold 26px Georgia";
+  ctx.textAlign="center";
+  ctx.fillText("ROYAL FIGHTING PALACE",480,100);
+ }else if(stage==="city"){
+  for(let i=0;i<12;i++){
+   let x=i*85;
+   let h=100+(i*53)%130;
+   ctx.fillStyle="#17274a";
+   ctx.fillRect(x,400-h,65,h);
+   for(let y=415-h;y<390;y+=23){
+    ctx.fillStyle=i%2?"#ffc65a":"#62caff";
+    ctx.fillRect(x+13,y,8,8);
+    ctx.fillRect(x+40,y,8,8);
+   }
+  }
+  ctx.fillStyle="#e4ad5b";
+  ctx.fillRect(0,400,960,140);
+ }else{
+  ctx.fillStyle="#f5c06c";
+  ctx.beginPath();ctx.arc(760,180,75,0,7);ctx.fill();
+  ctx.fillStyle="#a95946";
+  ctx.beginPath();ctx.moveTo(0,400);
+  ctx.lineTo(200,220);ctx.lineTo(400,400);
+  ctx.lineTo(600,260);ctx.lineTo(850,400);
+  ctx.fill();
+  ctx.fillStyle="#b97543";
+  ctx.fillRect(0,400,960,140);
+ }
+ // floor
+ ctx.strokeStyle="#ffffff25";ctx.lineWidth=2;
+ for(let x=0;x<960;x+=60){
+  ctx.beginPath();ctx.moveTo(x,400);ctx.lineTo(480+(x-480)*2,540);ctx.stroke();
+ }
+}
+
+// Cartoon fighter drawing
+function roundedRect(x,y,w,h,r,color){
+ ctx.fillStyle=color;ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);ctx.fill();
+}
+function fighterDraw(f){
+ const c=characters[f.type];
+ const x=f.x,y=f.y;
+ const dir=f.facing;
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.scale(dir,1);
+
+ // shadow
+ ctx.fillStyle="#0007";
+ ctx.beginPath();ctx.ellipse(0,3,46,11,0,0,7);ctx.fill();
+
+ let moving=Math.sin(f.walk)*5;
+ let attacking=f.attack>0;
+ let special=attacking&&f.attackType==="special";
+ let punching=attacking&&f.attackType==="punch";
+ let kicking=attacking&&f.attackType==="kick";
+
+ // legs
+ ctx.strokeStyle="#3b3540";ctx.lineWidth=17;
+ ctx.lineCap="round";
+ ctx.beginPath();
+ ctx.moveTo(-13,-27);
+ ctx.lineTo(-20+moving,-3);
+ ctx.moveTo(13,-27);
+ ctx.lineTo(20-moving,-3);
+ ctx.stroke();
+
+ // shoes
+ ctx.strokeStyle="#201d27";ctx.lineWidth=13;
+ ctx.beginPath();
+ ctx.moveTo(-20+moving,-3);ctx.lineTo(-34+moving,0);
+ ctx.moveTo(20-moving,-3);ctx.lineTo(34-moving,0);
+ ctx.stroke();
+
+ // body
+ roundedRect(-30,-116,60,91,19,f.color);
+
+ // waist cloth
+ if(f.type===0){
+  ctx.fillStyle="#ded9c9";
+  ctx.beginPath();ctx.moveTo(-30,-40);
+  ctx.lineTo(30,-40);ctx.lineTo(25,-24);
+  ctx.lineTo(-25,-24);ctx.fill();
+ }
+ // shirt details
+ ctx.strokeStyle="#ffffff99";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(0,-110);ctx.lineTo(0,-52);ctx.stroke();
+
+ // arms
+ ctx.strokeStyle=c.skin;ctx.lineWidth=15;
+ ctx.lineCap="round";
+ ctx.beginPath();
+ ctx.moveTo(-24,-103);
+ ctx.lineTo(-39,-76);
+ ctx.lineTo(-42,-49);
+ ctx.stroke();
+
+ ctx.beginPath();
+ ctx.moveTo(24,-103);
+ ctx.lineTo(punching||special?75:37,-78);
+ ctx.lineTo(punching||special?103:42,-73);
+ ctx.stroke();
+
+ // fist
+ roundedRect(punching||special?92:33,-83,20,20,8,"#d8a17e");
+
+ // special aura
+ if(special){
+  ctx.strokeStyle="#ffe451";
+  ctx.lineWidth=6;
+  ctx.shadowColor="#ffb700";
+  ctx.shadowBlur=25;
+  ctx.beginPath();ctx.arc(0,-90,76,0,7);ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#fff6a0";
+  ctx.font="bold 30px Arial";
+  ctx.fillText("⚡",70,-125);
+ }
+
+ // kick effect
+ if(kicking){
+  ctx.strokeStyle="#ffe17a";ctx.lineWidth=8;
+  ctx.beginPath();ctx.moveTo(10,-25);ctx.lineTo(90,-45);ctx.stroke();
+ }
+
+ // neck and head
+ ctx.fillStyle=c.skin;
+ ctx.fillRect(-10,-127,20,18);
+ ctx.beginPath();ctx.ellipse(0,-151,26,30,0,0,7);ctx.fill();
+
+ // hair
+ ctx.fillStyle=c.hair;
+ if(f.type!==0){
+  ctx.beginPath();ctx.arc(0,-168,25,Math.PI,Math.PI*2);ctx.fill();
+  if(f.type===3){
+   ctx.beginPath();ctx.moveTo(-22,-166);
+   ctx.lineTo(-34,-187);ctx.lineTo(-8,-178);
+   ctx.fill();
+  }
+ }
+ // Gandhi glasses
+ if(f.type===0){
+  ctx.strokeStyle="#272727";ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.arc(-10,-153,9,0,7);
+  ctx.arc(10,-153,9,0,7);
+  ctx.moveTo(-1,-153);ctx.lineTo(1,-153);
+  ctx.stroke();
+ }
+ // Beard
+ if(f.type===0||f.type===1||f.type===3){
+  ctx.fillStyle=c.beard;
+  ctx.beginPath();
+  ctx.moveTo(-18,-140);
+  ctx.quadraticCurveTo(0,-119,18,-140);
+  ctx.lineTo(12,-131);ctx.lineTo(-12,-131);ctx.fill();
+ }
+ // face
+ ctx.fillStyle="#241c1a";
+ ctx.beginPath();ctx.arc(-9,-156,2.5,0,7);ctx.arc(9,-156,2.5,0,7);ctx.fill();
+
+ // eyebrows
+ ctx.strokeStyle="#34211b";ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.moveTo(-16,-164);ctx.lineTo(-6,-166);
+ ctx.moveTo(6,-166);ctx.lineTo(16,-164);
+ ctx.stroke();
+
+ // block shield
+ if(f.block){
+  ctx.strokeStyle="#36dfff";ctx.lineWidth=5;
+  ctx.shadowColor="#00cfff";ctx.shadowBlur=18;
+  ctx.beginPath();ctx.arc(0,-90,70,-1.7,1.7);ctx.stroke();
+  ctx.shadowBlur=0;
+ }
+ if(f.flash>0){
+  ctx.fillStyle="#ffffff77";
+  ctx.fillRect(-35,-180,70,180);
+ }
+ ctx.restore();
+
+ ctx.textAlign="center";
+ ctx.font="bold 15px Arial";
+ ctx.fillStyle="#ffffff";
+ ctx.shadowColor="#000";ctx.shadowBlur=5;
+ ctx.fillText(c.name,x,y+30);
+ ctx.shadowBlur=0;
+}
+
+function draw(){
+ ctx.save();
+ if(shake>0){
+  ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  shake*=.85;
+ }
+ background();
+ // center line
+ ctx.strokeStyle="#ffffff33";ctx.setLineDash([8,12]);
+ ctx.beginPath();ctx.moveTo(480,270);ctx.lineTo(480,400);ctx.stroke();
+ ctx.setLineDash([]);
+
+ fighterDraw(p1);fighterDraw(p2);
+
+ // particles
+ particles.forEach(p=>{
+  ctx.globalAlpha=Math.max(0,p.life/40);
+  ctx.fillStyle=p.color;
+  ctx.shadowColor=p.color;ctx.shadowBlur=12;
+  ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,7);ctx.fill();
+ });
+ ctx.globalAlpha=1;ctx.shadowBlur=0;
+
+ if(finished){
+  ctx.fillStyle="#0009";ctx.fillRect(0,0,960,540);
+  ctx.textAlign="center";
+  ctx.font="bold 48px Arial";ctx.fillStyle="#ffce4e";
+  ctx.shadowColor="#ff9900";ctx.shadowBlur=25;
+  ctx.fillText("MATCH FINISHED",480,250);
+  ctx.shadowBlur=0;
+ }
+ ctx.restore();
+}
+
+// Keyboard
+document.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))
+ e.preventDefault();
+ if(keys[k])return;
+ keys[k]=true;
+ if(!running||paused)return;
+
+ if(k==="a")control(p1,p2,"left");
+ if(k==="d")control(p1,p2,"right");
+ if(k==="w")control(p1,p2,"jump");
+ if(k==="s")control(p1,p2,"block");
+ if(k==="f")control(p1,p2,"punch");
+ if(k==="g")control(p1,p2,"kick");
+ if(k==="h")control(p1,p2,"special");
+
+ if($("mode").value==="two"){
+  if(k==="arrowleft")control(p2,p1,"left");
+  if(k==="arrowright")control(p2,p1,"right");
+  if(k==="arrowup")control(p2,p1,"jump");
+  if(k==="arrowdown")control(p2,p1,"block");
+  if(k==="k")control(p2,p1,"punch");
+  if(k==="l")control(p2,p1,"kick");
+  if(k===";")control(p2,p1,"special");
+ }
+});
+
+document.addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+ if(p1)p1.block=false;
+ if(p2)p2.block=false;
+});
+
+function soundOn(){sound=true;$("announcement").textContent="🔊 SOUND ENABLED";}
+function soundOff(){sound=false;$("announcement").textContent="🔇 SOUND MUTED";}
+
+resetGame();
+stats();
+</script>
+</body>
+</html>
